@@ -1,3 +1,5 @@
+import Link from 'next/link';
+
 export default function Home() {
   return (
     <>
@@ -9,12 +11,15 @@ export default function Home() {
         (solo deslizar, sin multitoque) para coger el hábito bueno.
       </div>
 
-      <div className="card">
-        <h2>En construcción</h2>
-        <p className="muted">
-          F0: base de la app (PWA offline). Próximamente: motor de kana, teclado virtual, lecciones.
-        </p>
-      </div>
+      <ul className="links">
+        <li>
+          <Link href="/libre/">
+            自由入力 <small>Prueba libre del teclado virtual</small>
+          </Link>
+        </li>
+      </ul>
+
+      <p className="muted">Próximamente: lecciones, sesiones con repetición ponderada y progreso.</p>
     </>
   );
 }
