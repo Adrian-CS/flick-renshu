@@ -1,0 +1,6 @@
+# Cloudflare Pages: always revalidate the service worker and its file list,
+# so a new deploy reaches installed copies of the app.
+/sw.js
+  Cache-Control: no-cache
+/precache-manifest.json
+  Cache-Control: no-cache

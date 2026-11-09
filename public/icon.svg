@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="96" fill="#1f5fa8"/>
+  <rect x="176" y="176" width="160" height="160" rx="28" fill="#fff"/>
+  <text x="256" y="256" dy="0.35em" text-anchor="middle" font-family="Hiragino Sans, Noto Sans JP, sans-serif" font-weight="700" font-size="104" fill="#1f5fa8">あ</text>
+  <g fill="#fff" opacity="0.85">
+    <path d="M256 70l36 50h-72z"/>
+    <path d="M256 442l36-50h-72z"/>
+    <path d="M70 256l50-36v72z"/>
+    <path d="M442 256l-50-36v72z"/>
+  </g>
+</svg>
