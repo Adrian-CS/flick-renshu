@@ -1,8 +1,6 @@
 /**
- * Teclado フリック de 12 teclas (iOS «かな» / Gboard 12キー).
- *
- * Solo las teclas «normales» tienen mapa por ahora. や, わ, 小゛゜ y 、。?! están en la
- * disposición pero sin kana hasta confirmar su comportamiento con capturas del iPhone.
+ * Teclado フリック de 12 teclas (iOS «かな», con フリックのみ).
+ * Comportamiento de や, わ, 、。?! y 小゛゜ comprobado en el iPhone del usuario (nov. 2026).
  */
 
 export const DIRECTIONS = ['tap', 'left', 'up', 'right', 'down'] as const;
@@ -25,14 +23,21 @@ export const KEY_LABEL: Readonly<Record<KeyId, string>> = {
   mod: '小゛゜', wa: 'わ', punct: '、。?!',
 };
 
-/** Las 5 kana de una tecla, en orden de DIRECTIONS: toque, izquierda, arriba, derecha, abajo. */
-type Fan = readonly [tap: string, left: string, up: string, right: string, down: string];
+/** Teclas con abanico (todas menos 小゛゜, que modifica la kana anterior). */
+export const FAN_KEYS = ['a', 'ka', 'sa', 'ta', 'na', 'ha', 'ma', 'ya', 'ra', 'wa', 'punct'] as const;
+export type FanKeyId = (typeof FAN_KEYS)[number];
 
-/** Teclas cuyo abanico es la fila del silabario completa (あいうえお). */
+/** Teclas cuyo abanico es una fila completa del silabario (あいうえお). */
 export const BASIC_KEYS = ['a', 'ka', 'sa', 'ta', 'na', 'ha', 'ma', 'ra'] as const;
 export type BasicKeyId = (typeof BASIC_KEYS)[number];
 
-const BASIC_FANS: Readonly<Record<BasicKeyId, Fan>> = {
+/** La tecla 小゛゜: sin abanico; cualquier gesto la activa. */
+export const MOD_KEY = 'mod' satisfies KeyId;
+
+/** Abanico en orden de DIRECTIONS: toque, izquierda, arriba, derecha, abajo (null = nada). */
+type Fan = readonly [tap: string, left: string | null, up: string | null, right: string | null, down: string | null];
+
+const FANS: Readonly<Record<FanKeyId, Fan>> = {
   a: ['あ', 'い', 'う', 'え', 'お'],
   ka: ['か', 'き', 'く', 'け', 'こ'],
   sa: ['さ', 'し', 'す', 'せ', 'そ'],
@@ -40,59 +45,56 @@ const BASIC_FANS: Readonly<Record<BasicKeyId, Fan>> = {
   na: ['な', 'に', 'ぬ', 'ね', 'の'],
   ha: ['は', 'ひ', 'ふ', 'へ', 'ほ'],
   ma: ['ま', 'み', 'む', 'め', 'も'],
+  ya: ['や', '「', 'ゆ', '」', 'よ'],
   ra: ['ら', 'り', 'る', 'れ', 'ろ'],
+  wa: ['わ', 'を', 'ん', 'ー', null],
+  punct: ['、', '。', '？', '！', null],
 };
+
+export function isFanKey(key: KeyId): key is FanKeyId {
+  return key !== MOD_KEY;
+}
 
 export function isBasicKey(key: KeyId): key is BasicKeyId {
   return (BASIC_KEYS as readonly string[]).includes(key);
 }
 
-/** Lo que escribe la tecla `key` con el gesto `dir`, o null si no está definido (aún). */
+/** Lo que escribe la tecla `key` con el gesto `dir`, o null si no escribe nada (o es 小゛゜). */
 export function flickKana(key: KeyId, dir: Direction): string | null {
-  if (!isBasicKey(key)) return null;
-  return BASIC_FANS[key][DIRECTIONS.indexOf(dir)] ?? null;
+  if (!isFanKey(key)) return null;
+  return FANS[key][DIRECTIONS.indexOf(dir)] ?? null;
 }
 
-/** Abanico completo de una tecla (null en las posiciones sin definir). */
+/** Abanico completo de una tecla (null en las posiciones vacías). */
 export function keyFan(key: KeyId): Readonly<Record<Direction, string | null>> {
   return Object.fromEntries(DIRECTIONS.map((d) => [d, flickKana(key, d)])) as Record<Direction, string | null>;
 }
 
-/** Un gesto: una tecla y una dirección. */
+/** Un gesto: una tecla y una dirección. Para 小゛゜ la dirección es siempre 'tap'. */
 export interface Stroke {
   key: KeyId;
   dir: Direction;
 }
 
+export const MOD_STROKE: Stroke = { key: MOD_KEY, dir: 'tap' };
+
 export function strokeId(s: Stroke): string {
   return `${s.key}:${s.dir}`;
 }
 
-const STROKE_OF = new Map<string, Stroke>();
-for (const key of BASIC_KEYS) {
-  for (const dir of DIRECTIONS) STROKE_OF.set(BASIC_FANS[key][DIRECTIONS.indexOf(dir)]!, { key, dir });
+/** Todos los gestos que escriben algo (tecla × dirección) con su resultado. */
+export function allStrokes(): (Stroke & { kana: string })[] {
+  return FAN_KEYS.flatMap((key) =>
+    DIRECTIONS.flatMap((dir) => {
+      const kana = flickKana(key, dir);
+      return kana ? [{ key, dir, kana }] : [];
+    }),
+  );
 }
 
-/** Gesto que escribe la kana, o null si no se escribe con un único gesto de una tecla básica. */
+const STROKE_OF = new Map<string, Stroke>(allStrokes().map(({ key, dir, kana }) => [kana, { key, dir }]));
+
+/** Gesto único que escribe la kana, o null si hace falta 小゛゜ o no se puede escribir. */
 export function strokeFor(kana: string): Stroke | null {
   return STROKE_OF.get(kana) ?? null;
-}
-
-/** Todos los gestos definidos (tecla × dirección) con su kana. */
-export function allStrokes(): (Stroke & { kana: string })[] {
-  return BASIC_KEYS.flatMap((key) => DIRECTIONS.map((dir) => ({ key, dir, kana: flickKana(key, dir)! })));
-}
-
-/**
- * Secuencia de gestos para escribir un texto en hiragana, o null si contiene algo
- * que aún no se sabe escribir (dakuten, pequeñas, や/わ, puntuación…).
- */
-export function strokesFor(text: string): Stroke[] | null {
-  const out: Stroke[] = [];
-  for (const ch of Array.from(text)) {
-    const s = strokeFor(ch);
-    if (!s) return null;
-    out.push(s);
-  }
-  return out;
 }

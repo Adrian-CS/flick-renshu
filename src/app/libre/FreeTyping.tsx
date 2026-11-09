@@ -46,13 +46,16 @@ export function FreeTyping() {
           </button>
         ))}
       </div>
-      <p className="muted">や, わ, 小゛゜ y 、。?! aún no escriben: faltan las capturas del iPhone.</p>
 
       <VirtualKeyboard
         hint={hint}
         onKana={(kana, stroke) => {
           edit({ type: 'insert', text: kana });
           setLast({ kana, stroke });
+        }}
+        onModifier={() => {
+          edit({ type: 'modify' });
+          setLast(null);
         }}
         onBackspace={() => edit({ type: 'backspace' })}
         onSpace={() => edit({ type: 'insert', text: '　' })}

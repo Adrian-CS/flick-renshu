@@ -135,7 +135,6 @@ a { color: var(--accent); }
 .kb-enter { grid-row: span 2; }
 
 .kb-kana.kb-active { background: var(--line); }
-.kb-kana.kb-unmapped { color: var(--muted); }
 
 .kb-center { font-size: 1.45rem; line-height: 1; }
 .kb-center.kb-small { font-size: 0.85rem; }

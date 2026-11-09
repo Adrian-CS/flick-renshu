@@ -21,11 +21,12 @@ export interface KeyFace {
 export function keyFace(key: KeyId, level: HintLevel): KeyFace {
   const fan = keyFan(key);
   const defined = DIRECTIONS.some((d) => fan[d] !== null);
-  // las teclas aún sin mapa muestran siempre su etiqueta (no son parte del ejercicio)
+  // 小゛゜ (sin abanico) muestra siempre su etiqueta
   if (!defined) return { center: KEY_LABEL[key], around: {} };
   if (level === 'none') return { center: '', around: {} };
+  // 'row': la etiqueta del teclado real (、。?! en la de puntuación); 'all': la del toque
+  if (level === 'row') return { center: KEY_LABEL[key], around: {} };
   const center = fan.tap ?? KEY_LABEL[key];
-  if (level === 'row') return { center, around: {} };
   const around: KeyFace['around'] = {};
   for (const d of ['left', 'up', 'right', 'down'] as const) {
     const k = fan[d];

@@ -1,12 +1,14 @@
 'use client';
 import { useEffect, useRef, useState } from 'react';
-import { KEY_LAYOUT, flickKana, keyFan, type Direction, type KeyId, type Stroke } from '@/lib/kana';
+import { KEY_LAYOUT, MOD_KEY, flickKana, keyFan, type Direction, type KeyId, type Stroke } from '@/lib/kana';
 import { clampFanX, classifyGesture } from '@/lib/gesture';
 import { keyFace, type HintLevel } from '@/lib/hints';
 
 export interface VirtualKeyboardProps {
   hint: HintLevel;
   onKana: (kana: string, stroke: Stroke) => void;
+  /** 小゛゜: modificar la kana anterior */
+  onModifier: () => void;
   onBackspace: () => void;
   onSpace?: () => void;
   onEnter?: () => void;
@@ -45,18 +47,19 @@ const REPEAT_EVERY = 70;
  * Cada dedo se sigue por separado (se puede bajar el siguiente antes de levantar el anterior);
  * la kana se escribe al levantar el dedo.
  */
-export function VirtualKeyboard({ hint, onKana, onBackspace, onSpace, onEnter }: VirtualKeyboardProps) {
+export function VirtualKeyboard({ hint, onKana, onModifier, onBackspace, onSpace, onEnter }: VirtualKeyboardProps) {
   const root = useRef<HTMLDivElement>(null);
   const presses = useRef(new Map<number, Press>());
   const [fan, setFan] = useState<FanState | null>(null);
 
   // callbacks siempre actuales sin volver a crear los manejadores
-  const cb = useRef({ onKana, onBackspace });
-  cb.current = { onKana, onBackspace };
+  const cb = useRef({ onKana, onModifier, onBackspace });
+  cb.current = { onKana, onModifier, onBackspace };
 
   function showLatestFan() {
     const entries = [...presses.current.entries()];
-    const last = entries[entries.length - 1];
+    // 小゛゜ no tiene abanico
+    const last = entries.filter(([, p]) => p.key !== MOD_KEY).pop();
     setFan(last ? { pointerId: last[0], press: { ...last[1] } } : null);
   }
 
@@ -93,9 +96,13 @@ export function VirtualKeyboard({ hint, onKana, onBackspace, onSpace, onEnter }:
     const p = presses.current.get(e.pointerId);
     if (!p) return;
     presses.current.delete(e.pointerId);
-    const dir = classifyGesture(e.clientX - p.x0, e.clientY - p.y0, p.width);
-    const kana = flickKana(p.key, dir);
-    if (kana) cb.current.onKana(kana, { key: p.key, dir });
+    if (p.key === MOD_KEY) {
+      cb.current.onModifier();
+    } else {
+      const dir = classifyGesture(e.clientX - p.x0, e.clientY - p.y0, p.width);
+      const kana = flickKana(p.key, dir);
+      if (kana) cb.current.onKana(kana, { key: p.key, dir });
+    }
     showLatestFan();
   }
 
@@ -151,19 +158,18 @@ export function VirtualKeyboard({ hint, onKana, onBackspace, onSpace, onEnter }:
             {row.map((key) => {
               const face = keyFace(key, hint);
               const active = fan?.press.key === key;
-              const mapped = flickKana(key, 'tap') !== null;
               return (
                 <button
                   type="button"
                   key={key}
-                  className={`kb-key kb-kana${active ? ' kb-active' : ''}${mapped ? '' : ' kb-unmapped'}`}
+                  className={`kb-key kb-kana${active ? ' kb-active' : ''}`}
                   onPointerDown={(e) => onDown(e, key)}
                   onPointerMove={onMove}
                   onPointerUp={onUp}
                   onPointerCancel={onCancel}
                   aria-label={face.center || key}
                 >
-                  <span className={`kb-center${key === 'mod' || key === 'punct' ? ' kb-small' : ''}`}>{face.center}</span>
+                  <span className={`kb-center${Array.from(face.center).length > 1 ? ' kb-small' : ''}`}>{face.center}</span>
                   {face.around.left && <span className="kb-around kb-l">{face.around.left}</span>}
                   {face.around.up && <span className="kb-around kb-u">{face.around.up}</span>}
                   {face.around.right && <span className="kb-around kb-r">{face.around.right}</span>}

@@ -48,24 +48,27 @@ describe('flickKana: las 40 combinaciones de teclas básicas', () => {
     for (const dir of ORDER) expect(flickKana('a', dir)).toBe(vowelOf[dir]);
   });
 
-  it('teclas especiales: todavía sin definir', () => {
-    for (const key of ['ya', 'wa', 'mod', 'punct'] as const) {
-      for (const dir of ORDER) expect(flickKana(key, dir)).toBeNull();
-    }
+  it('teclas especiales (comprobado en el iPhone)', () => {
+    expect(keyFan('ya')).toEqual({ tap: 'や', left: '「', up: 'ゆ', right: '」', down: 'よ' });
+    expect(keyFan('wa')).toEqual({ tap: 'わ', left: 'を', up: 'ん', right: 'ー', down: null });
+    expect(keyFan('punct')).toEqual({ tap: '、', left: '。', up: '？', right: '！', down: null });
+  });
+
+  it('小゛゜ no tiene abanico', () => {
+    for (const dir of ORDER) expect(flickKana('mod', dir)).toBeNull();
   });
 
   it('keyFan devuelve las 5 posiciones', () => {
     expect(keyFan('ka')).toEqual({ tap: 'か', left: 'き', up: 'く', right: 'け', down: 'こ' });
-    expect(keyFan('wa')).toEqual({ tap: null, left: null, up: null, right: null, down: null });
   });
 });
 
 describe('strokeFor: inverso', () => {
-  it('40 gestos distintos, 40 kana distintas', () => {
+  it('53 gestos (40 básicos + 5 や + 4 わ + 4 puntuación), todos distintos', () => {
     const all = allStrokes();
-    expect(all).toHaveLength(40);
-    expect(new Set(all.map((s) => s.kana)).size).toBe(40);
-    expect(new Set(all.map(strokeId)).size).toBe(40);
+    expect(all).toHaveLength(40 + 5 + 4 + 4);
+    expect(new Set(all.map((s) => s.kana)).size).toBe(all.length);
+    expect(new Set(all.map(strokeId)).size).toBe(all.length);
   });
 
   it('ida y vuelta para todas las kana', () => {
@@ -75,27 +78,17 @@ describe('strokeFor: inverso', () => {
     }
   });
 
-  it('null para lo que aún no se escribe con un gesto básico', () => {
-    for (const k of ['が', 'ぱ', 'っ', 'ゃ', 'や', 'わ', 'を', 'ん', 'ー', '、', 'ア', 'a', '']) {
+  it('teclas especiales', () => {
+    expect(strokeFor('ゆ')).toEqual({ key: 'ya', dir: 'up' });
+    expect(strokeFor('ん')).toEqual({ key: 'wa', dir: 'up' });
+    expect(strokeFor('ー')).toEqual({ key: 'wa', dir: 'right' });
+    expect(strokeFor('。')).toEqual({ key: 'punct', dir: 'left' });
+    expect(strokeFor('？')).toEqual({ key: 'punct', dir: 'up' });
+  });
+
+  it('null para lo que no sale con un solo gesto', () => {
+    for (const k of ['が', 'ぱ', 'っ', 'ゃ', 'ア', 'a', '?', '']) {
       expect(strokeFor(k)).toBeNull();
     }
-  });
-});
-
-describe('strokesFor', () => {
-  it('secuencia de gestos de una palabra', () => {
-    expect(strokesFor('さくら')).toEqual([
-      { key: 'sa', dir: 'tap' }, { key: 'ka', dir: 'up' }, { key: 'ra', dir: 'tap' },
-    ]);
-    expect(strokesFor('ひと')?.map(strokeId)).toEqual(['ha:left', 'ta:down']);
-  });
-
-  it('cadena vacía → secuencia vacía', () => {
-    expect(strokesFor('')).toEqual([]);
-  });
-
-  it('null si alguna kana aún no es escribible', () => {
-    expect(strokesFor('がっこう')).toBeNull();
-    expect(strokesFor('やま')).toBeNull();
   });
 });

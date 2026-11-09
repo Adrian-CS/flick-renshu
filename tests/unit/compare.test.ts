@@ -11,6 +11,10 @@ describe('toHiragana / normalizeKana', () => {
     expect(toHiragana('ひらがなー、。abc')).toBe('ひらがなー、。abc');
   });
 
+  it('?! de ancho medio cuentan como ？！', () => {
+    expect(normalizeKana('え?ほんと!')).toBe('え？ほんと！');
+  });
+
   it('une dakuten combinantes (NFD → NFC)', () => {
     expect(normalizeKana('が')).toBe('が');
     expect(normalizeKana('パ')).toBe('ぱ');

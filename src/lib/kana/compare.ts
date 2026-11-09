@@ -24,9 +24,9 @@ export function toHiragana(text: string): string {
   return out;
 }
 
-/** Normaliza para comparar: NFC (une か+゙ → が) y katakana → hiragana. */
+/** Normaliza para comparar: NFC (une か+゙ → が), katakana → hiragana, ?! → ？！. */
 export function normalizeKana(text: string): string {
-  return toHiragana(text.normalize('NFC'));
+  return toHiragana(text.normalize('NFC')).replaceAll('?', '？').replaceAll('!', '！');
 }
 
 /** Separa en kana (puntos de código), ya normalizado. */
