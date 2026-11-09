@@ -96,10 +96,11 @@ export function VirtualKeyboard({ hint, onKana, onModifier, onBackspace, onSpace
     const p = presses.current.get(e.pointerId);
     if (!p) return;
     presses.current.delete(e.pointerId);
+    const dir = classifyGesture(e.clientX - p.x0, e.clientY - p.y0, p.width);
     if (p.key === MOD_KEY) {
-      cb.current.onModifier();
+      // como en iOS: deslizar sobre 小゛゜ no hace nada
+      if (dir === 'tap') cb.current.onModifier();
     } else {
-      const dir = classifyGesture(e.clientX - p.x0, e.clientY - p.y0, p.width);
       const kana = flickKana(p.key, dir);
       if (kana) cb.current.onKana(kana, { key: p.key, dir });
     }

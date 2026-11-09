@@ -1,7 +1,7 @@
 /**
  * Tecla 小゛゜: cada toque pasa la kana anterior a la siguiente de su ciclo.
  * Ciclos comprobados en iOS: つ→っ→づ→つ, は→ば→ぱ→は, か→が→か, や→ゃ→や,
- * あ→ぁ→あ, う→ぅ→ゔ→う.
+ * あ→ぁ→あ, う→ぅ→ゔ→う, わ→ゎ→わ. Solo al tocar: deslizar sobre 小゛゜ no hace nada.
  */
 import { MOD_STROKE, strokeFor, type Stroke } from './keys';
 
@@ -15,6 +15,7 @@ export const MODIFIER_CYCLES: readonly (readonly string[])[] = [
   ...pairs('あいえお', 'ぁぃぇぉ'),
   ['う', 'ぅ', 'ゔ'],
   ...pairs('やゆよ', 'ゃゅょ'),
+  ['わ', 'ゎ'],
   // dakuten
   ...pairs('かきくけこさしすせそたちてと', 'がぎぐげござじずぜぞだぢでど'),
   ['つ', 'っ', 'づ'],

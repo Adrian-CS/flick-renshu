@@ -24,6 +24,9 @@ describe('applyModifier: ciclos comprobados en el iPhone', () => {
   it('あ → ぁ → あ', () => {
     expect([1, 2].map((n) => tapMod('あ', n))).toEqual(['ぁ', 'あ']);
   });
+  it('わ → ゎ → わ', () => {
+    expect([1, 2].map((n) => tapMod('わ', n))).toEqual(['ゎ', 'わ']);
+  });
   it('う → ぅ → ゔ → う', () => {
     expect([1, 2, 3].map((n) => tapMod('う', n))).toEqual(['ぅ', 'ゔ', 'う']);
   });
@@ -49,7 +52,7 @@ describe('applyModifier: resto de filas', () => {
     expect(applyModifier('ゔ')).toBe('う');
   });
   it('no hace nada con lo que no tiene variante', () => {
-    for (const k of ['な', 'ま', 'ら', 'ん', 'を', 'ー', '、', '「', 'わ', '']) expect(applyModifier(k)).toBeNull();
+    for (const k of ['な', 'ま', 'ら', 'ん', 'を', 'ー', '、', '「', '']) expect(applyModifier(k)).toBeNull();
   });
 });
 
@@ -78,6 +81,7 @@ describe('strokesFor', () => {
     expect(strokesForKana('ぱ')?.map(strokeId)).toEqual(['ha:tap', 'mod:tap', 'mod:tap']);
     expect(strokesForKana('づ')?.map(strokeId)).toEqual(['ta:up', 'mod:tap', 'mod:tap']);
     expect(strokesForKana('ょ')?.map(strokeId)).toEqual(['ya:down', 'mod:tap']);
+    expect(strokesForKana('ゎ')?.map(strokeId)).toEqual(['wa:tap', 'mod:tap']);
   });
   it('palabras', () => {
     expect(strokesFor('さくら')?.map(strokeId)).toEqual(['sa:tap', 'ka:up', 'ra:tap']);
@@ -90,7 +94,6 @@ describe('strokesFor', () => {
   });
   it('cadena vacía → secuencia vacía; imposible → null', () => {
     expect(strokesFor('')).toEqual([]);
-    expect(strokesFor('ゎ')).toBeNull();
     expect(strokesFor('a')).toBeNull();
   });
   it('ida y vuelta: aplicar los gestos reproduce la kana', () => {

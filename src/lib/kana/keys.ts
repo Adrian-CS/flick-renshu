@@ -31,7 +31,7 @@ export type FanKeyId = (typeof FAN_KEYS)[number];
 export const BASIC_KEYS = ['a', 'ka', 'sa', 'ta', 'na', 'ha', 'ma', 'ra'] as const;
 export type BasicKeyId = (typeof BASIC_KEYS)[number];
 
-/** La tecla 小゛゜: sin abanico; cualquier gesto la activa. */
+/** La tecla 小゛゜: sin abanico; solo actúa al tocarla (deslizar no hace nada). */
 export const MOD_KEY = 'mod' satisfies KeyId;
 
 /** Abanico en orden de DIRECTIONS: toque, izquierda, arriba, derecha, abajo (null = nada). */
