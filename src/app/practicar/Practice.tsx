@@ -4,7 +4,9 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { VirtualKeyboard } from '@/components/VirtualKeyboard';
 import { DrillSession, type DrillMetrics } from '@/lib/drill';
-import { PHASE_LABEL, getLesson, lessonPool, lessonStrokeIds, type Lesson, type PhaseId } from '@/lib/lessons';
+import { PHASE_LABEL, displayMap, getLesson, lessonPool, lessonStrokeIds, type Lesson, type PhaseId } from '@/lib/lessons';
+import { loadWords, type WordRow } from '@/lib/words';
+import { Attribution } from '@/components/Attribution';
 import { autoHintLevel, pickWeighted, troubleStrokes, type StrokeStat } from '@/lib/stats';
 import { getSettings, loadStats, saveSession, sessionsFor, type SessionRecord } from '@/lib/db';
 import { DEFAULT_SETTINGS, type Settings } from '@/lib/settings';
@@ -15,7 +17,7 @@ import { compareSessions, formatDelta } from '@/lib/summary';
 
 type Screen =
   | { kind: 'ready' }
-  | { kind: 'running'; session: DrillSession; hint: HintLevel; lessonKey: string; startedAt: number }
+  | { kind: 'running'; session: DrillSession; hint: HintLevel; lessonKey: string; startedAt: number; display: Map<string, string> }
   | { kind: 'summary'; metrics: DrillMetrics; prev?: SessionRecord; weak: StrokeStat[]; lessonKey: string };
 
 export function Practice() {
@@ -36,6 +38,7 @@ function LessonPractice({ lesson }: { lesson: Lesson }) {
   const [phase, setPhase] = useState<PhaseId>(lesson.phases[0]!);
   const [screen, setScreen] = useState<Screen>({ kind: 'ready' });
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [, rerender] = useState(0);
   const refresh = useCallback(() => rerender((n) => n + 1), []);
 
@@ -46,14 +49,35 @@ function LessonPractice({ lesson }: { lesson: Lesson }) {
   async function start(p: PhaseId) {
     setPhase(p);
     const stats = await loadStats().catch(() => new Map<string, StrokeStat>());
-    const pool = lessonPool(lesson.id, p);
+    let words: WordRow[] = [];
+    if (lesson.needsWords) {
+      try {
+        words = (await loadWords()).words;
+      } catch {
+        setLoadError('No se ha podido cargar la lista de palabras. Abre la app una vez con conexión.');
+        return;
+      }
+    }
+    setLoadError(null);
+    const pool = lessonPool(lesson.id, p, words);
+    if (pool.items.length === 0) {
+      setLoadError('Esta lección no tiene elementos.');
+      return;
+    }
     const session = new DrillSession({
       next: (prev) => pickWeighted(pool.items, { stats, focus: pool.focus, avoid: prev }),
       durationMs: settings.durationMin * 60000,
       hintDelayMs: settings.hintDelayMs,
     });
     const hint = settings.hintMode === 'auto' ? autoHintLevel(lessonStrokeIds(lesson.id), stats) : settings.hintMode;
-    setScreen({ kind: 'running', session, hint, lessonKey: `${lesson.id}/${p}`, startedAt: Date.now() });
+    setScreen({
+      kind: 'running',
+      session,
+      hint,
+      lessonKey: `${lesson.id}/${p}`,
+      startedAt: Date.now(),
+      display: displayMap(lesson.id, words),
+    });
   }
 
   async function finish(running: Extract<Screen, { kind: 'running' }>) {
@@ -79,6 +103,7 @@ function LessonPractice({ lesson }: { lesson: Lesson }) {
       <p className="muted">{lesson.subtitle}</p>
 
       {screen.kind === 'summary' && <Summary screen={screen} />}
+      {loadError && <p className="note">{loadError}</p>}
 
       <h2>{screen.kind === 'summary' ? 'Otra vez' : 'Empezar'}</h2>
       <ul className="links">
@@ -91,6 +116,7 @@ function LessonPractice({ lesson }: { lesson: Lesson }) {
           </li>
         ))}
       </ul>
+      {lesson.needsWords && <Attribution />}
       <p className="muted">
         {settings.durationMin} min · {settings.hintMode === 'auto' ? 'etiquetas automáticas' : 'etiquetas fijas'} · ajustes en
         Lecciones
@@ -100,6 +126,7 @@ function LessonPractice({ lesson }: { lesson: Lesson }) {
 }
 
 function phaseHelp(lesson: Lesson, p: PhaseId): string {
+  if (lesson.group === 4) return lesson.subtitle;
   const items = lessonPool(lesson.id, p).items;
   const sample = items.slice(0, 12).join(' ') + (items.length > 12 ? ' …' : '');
   return sample;
@@ -145,6 +172,8 @@ function Running({
 
   const progress = Math.min(session.elapsedMs() / session.durationMs, 1);
   const states = session.kanaStates();
+  // kana sueltas: la cola en la misma línea; palabras y frases: solo la siguiente, debajo
+  const single = session.kana.length === 1 && session.upcoming.every((u) => Array.from(u).length === 1);
 
   return (
     <div className="with-kb drill">
@@ -168,16 +197,18 @@ function Running({
         <span style={{ width: `${progress * 100}%` }} />
       </div>
 
-      <div className="target" aria-live="polite">
-        <span className="target-current">
+      <p className="target-ref">{screen.display.get(session.target) ?? '\u00a0'}</p>
+      <div className={`target${single ? '' : ' target-multi'}`} aria-live="polite">
+        <span className={`target-current${session.kana.length > 6 ? ' target-long' : ''}`}>
           {session.kana.map((k, i) => (
             <span key={i} className={`k k-${states[i]}`}>
               {k}
             </span>
           ))}
         </span>
-        <span className="target-next">{session.upcoming.join('　')}</span>
+        {single && <span className="target-next">{session.upcoming.join('　')}</span>}
       </div>
+      {!single && <p className="muted target-after">次: {session.upcoming[0]}</p>}
 
       <div className="typed-line">
         <span className="typed-text">{session.typed}</span>

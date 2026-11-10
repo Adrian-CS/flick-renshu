@@ -330,3 +330,10 @@ a { color: var(--accent); }
 .lesson-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
 .lesson-grid a { margin: 0; padding: 10px 12px; height: 100%; }
 .lesson-grid small { font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.target-ref { margin: 14px 0 0; min-height: 1.5em; color: var(--muted); font-size: 1.05rem; }
+.drill .target.target-multi { margin-top: 4px; white-space: normal; }
+.target-multi .target-current { font-size: 2.4rem; }
+.target-current.target-long { font-size: 1.7rem; line-height: 1.4; }
+.target-after { margin: 0 0 8px; }
+.attribution { font-size: 0.8rem; }

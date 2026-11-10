@@ -23,6 +23,7 @@ Comandos:
 | `npm run typecheck` | TypeScript (strict) |
 | `npm run build` | export estático en `out/` + lista de precache del service worker |
 | `npm start` | sirve `out/` para probar la build (el service worker solo se activa en la build) |
+| `npm run data:words` | regenera `public/data/words.json` desde JMdict (ver abajo) |
 
 Para probar en el iPhone en la misma wifi, `npm run dev` y abre `http://<IP-del-PC>:3000`
 (la IP sale con `ipconfig`, línea «IPv4 アドレス»). Windows puede preguntar por el firewall:
@@ -51,6 +52,23 @@ las versiones nuevas llegan a la app instalada y se aplican al volver a abrirla.
 2. Ábrela una vez con conexión; desde entonces funciona en modo avión.
 3. Recomendado: Ajustes → General → Teclado → **フリックのみ** (solo deslizar, sin multitoque).
 
+## Palabras (JMdict)
+
+`public/data/words.json` está versionado: no hace falta regenerarlo para compilar.
+Sale de **JMdict** (EDRDG, licencia CC BY-SA 4.0), en el JSON de
+[jmdict-simplified](https://github.com/scriptin/jmdict-simplified) (fichero `jmdict-eng-common`):
+entradas comunes, lectura en hiragana escribible con el teclado, 2–8 kana, y sus formas con
+kanji para reconocerlas. La atribución se ve en la app (Lecciones y Créditos) y el fichero
+derivado lleva la misma licencia.
+
+```powershell
+npm run data:words                      # descarga la versión fijada en scripts/build-words.ts
+npm run data:words -- .\jmdict.json.zip  # o usa un fichero ya descargado
+```
+
+El script es TypeScript que Node 22 ejecuta directamente (sin `tsx`). `meta` dentro del JSON
+guarda la versión, la fecha del diccionario y el SHA-256 del fichero de origen.
+
 ## Seguridad de dependencias
 
 - `.npmrc` tiene `ignore-scripts=true`: npm no ejecuta scripts `preinstall`/`postinstall`.
@@ -67,5 +85,7 @@ src/components/  componentes compartidos
 src/lib/         lógica pura (con tests)
 tests/           Vitest
 public/          manifest, iconos, service worker
-scripts/         post-build (precache del service worker)
+src/data/        frases (inventadas)
+public/data/     words.json (JMdict, CC BY-SA 4.0)
+scripts/         post-build (precache) y generación de words.json
 ```

@@ -24,7 +24,10 @@ export default function Home() {
         </li>
       </ul>
 
-      <p className="muted">Próximamente: palabras, modo teclado del sistema y progreso.</p>
+      <p className="muted">Próximamente: modo teclado del sistema y progreso.</p>
+      <p className="muted">
+        <Link href="/creditos/">Créditos y licencias</Link>
+      </p>
     </>
   );
 }

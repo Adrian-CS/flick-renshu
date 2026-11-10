@@ -9,7 +9,8 @@
     "build": "next build && node scripts/precache-manifest.mjs",
     "start": "npx serve out",
     "test": "vitest run",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "data:words": "node scripts/build-words.ts"
   },
   "dependencies": {
     "idb": "8.0.3",

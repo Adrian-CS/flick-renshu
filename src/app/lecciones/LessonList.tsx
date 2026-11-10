@@ -6,8 +6,9 @@ import { mastery, type StrokeStat } from '@/lib/stats';
 import { getSettings, loadStats, saveSettings } from '@/lib/db';
 import { DURATION_OPTIONS, HINT_DELAY_OPTIONS, type Settings } from '@/lib/settings';
 import { HINT_LEVELS, HINT_LEVEL_LABEL } from '@/lib/hints';
+import { Attribution } from '@/components/Attribution';
 
-const GROUPS = [1, 2, 3] as const;
+const GROUPS = [1, 2, 3, 4] as const;
 
 export function LessonList() {
   const [stats, setStats] = useState<Map<string, StrokeStat> | null>(null);
@@ -44,8 +45,7 @@ export function LessonList() {
           </ul>
         </section>
       ))}
-      <h2>4. Palabras y frases</h2>
-      <p className="muted">Próximamente.</p>
+      <Attribution />
 
       {settings && (
         <section className="card">
