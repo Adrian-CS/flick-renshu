@@ -337,3 +337,56 @@ a { color: var(--accent); }
 .target-current.target-long { font-size: 1.7rem; line-height: 1.4; }
 .target-after { margin: 0 0 8px; }
 .attribution { font-size: 0.8rem; }
+
+/* ── teclado del sistema y textos ───────────────── */
+
+.sys-input {
+  width: 100%;
+  font: inherit;
+  font-size: 1.6rem;
+  padding: 10px 12px;
+  margin-top: 8px;
+  border: 2px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+}
+.sys-input:focus { outline: none; border-color: var(--accent); }
+.sys-input.sys-wrong { border-color: var(--ng); background: var(--ng-bg); }
+.sys-msg { color: var(--ng); font-size: 0.9rem; }
+
+.lines .line { margin: 4px 0; font-size: 1.05rem; }
+.lines .line-prev { color: var(--ok); }
+.lines .line-next { color: var(--muted); }
+
+.seg button:disabled { opacity: 0.45; }
+
+textarea.text-body, input.text-title {
+  width: 100%;
+  font: inherit;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  margin: 4px 0 10px;
+}
+textarea.text-body { min-height: 12rem; font-size: 1.05rem; line-height: 1.6; }
+
+.btn-primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn-danger { color: var(--ng); }
+.actions { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 8px; }
+
+.text-item { padding: 12px 14px; }
+.links .text-link { padding: 0; margin: 0; border: none; background: none; box-shadow: none; }
+.text-lines { padding-left: 1.6em; }
+.text-lines button {
+  background: none;
+  border: none;
+  padding: 6px 0;
+  text-align: left;
+  font: inherit;
+  font-size: 1.05rem;
+  color: var(--text);
+  width: 100%;
+}

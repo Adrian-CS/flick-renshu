@@ -18,13 +18,18 @@ export default function Home() {
           </Link>
         </li>
         <li>
+          <Link href="/textos/">
+            Mis textos <small>Escribe tus textos o letras línea a línea</small>
+          </Link>
+        </li>
+        <li>
           <Link href="/libre/">
             自由入力 <small>Prueba libre del teclado virtual</small>
           </Link>
         </li>
       </ul>
 
-      <p className="muted">Próximamente: modo teclado del sistema y progreso.</p>
+      <p className="muted">Próximamente: página de progreso.</p>
       <p className="muted">
         <Link href="/creditos/">Créditos y licencias</Link>
       </p>

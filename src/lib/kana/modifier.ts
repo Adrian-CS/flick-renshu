@@ -33,6 +33,12 @@ export function applyModifier(kana: string): string | null {
   return c.cycle[(c.index + 1) % c.cycle.length]!;
 }
 
+/** ¿`b` se obtiene de `a` con algún toque de 小゛゜? (a ≠ b, mismo ciclo) */
+export function sameModifierCycle(a: string, b: string): boolean {
+  const ca = CYCLE_OF.get(a);
+  return a !== b && ca !== undefined && ca.cycle.includes(b);
+}
+
 /** Gestos para escribir una kana: el de su base y tantos 小゛゜ como haga falta. */
 export function strokesForKana(kana: string): Stroke[] | null {
   const direct = strokeFor(kana);

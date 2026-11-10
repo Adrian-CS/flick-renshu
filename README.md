@@ -69,6 +69,18 @@ npm run data:words -- .\jmdict.json.zip  # o usa un fichero ya descargado
 El script es TypeScript que Node 22 ejecuta directamente (sin `tsx`). `meta` dentro del JSON
 guarda la versión, la fecha del diccionario y el SHA-256 del fichero de origen.
 
+## Teclado del sistema y Mis textos
+
+- En cada lección se puede elegir **teclado virtual** (el de la app, con estadísticas por gesto)
+  o **del sistema** (el フリック real del iPhone en un campo de texto). Con el del sistema se
+  puede encadenar varios objetivos sin confirmar; si el objetivo está en hiragana hay que
+  confirmar con 確定 sin elegir kanji. Las sesiones con el teclado del sistema se guardan
+  aparte (`sys:…`) y no cambian las estadísticas por gesto.
+- **Mis textos**: textos que pega el usuario (por ejemplo letras de canciones) para escribirlos
+  línea a línea. Se guardan **solo en IndexedDB del móvil**; nunca van al repositorio. Con kanji
+  solo sirven con el teclado del sistema (se convierte como al escribir de verdad); en kana,
+  con los dos.
+
 ## Seguridad de dependencias
 
 - `.npmrc` tiene `ignore-scripts=true`: npm no ejecuta scripts `preinstall`/`postinstall`.

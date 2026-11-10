@@ -3,6 +3,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { mergeStat, type StrokeStat } from './stats';
 import { DEFAULT_SETTINGS, type Settings } from './settings';
 import type { DrillMetrics } from './drill';
+import type { TextRecord } from './texts';
 
 export interface SessionRecord extends DrillMetrics {
   id?: number;
@@ -15,19 +16,23 @@ interface FlickDB extends DBSchema {
   strokes: { key: string; value: StrokeStat };
   sessions: { key: number; value: SessionRecord; indexes: { lessonKey: string; startedAt: number } };
   settings: { key: string; value: Settings & { id: string } };
+  texts: { key: number; value: TextRecord };
 }
 
 const DB_NAME = 'flick-renshu';
 let dbp: Promise<IDBPDatabase<FlickDB>> | null = null;
 
 export function db(): Promise<IDBPDatabase<FlickDB>> {
-  dbp ??= openDB<FlickDB>(DB_NAME, 1, {
-    upgrade(d) {
-      d.createObjectStore('strokes', { keyPath: 'id' });
-      const sessions = d.createObjectStore('sessions', { keyPath: 'id', autoIncrement: true });
-      sessions.createIndex('lessonKey', 'lessonKey');
-      sessions.createIndex('startedAt', 'startedAt');
-      d.createObjectStore('settings', { keyPath: 'id' });
+  dbp ??= openDB<FlickDB>(DB_NAME, 2, {
+    upgrade(d, oldVersion) {
+      if (oldVersion < 1) {
+        d.createObjectStore('strokes', { keyPath: 'id' });
+        const sessions = d.createObjectStore('sessions', { keyPath: 'id', autoIncrement: true });
+        sessions.createIndex('lessonKey', 'lessonKey');
+        sessions.createIndex('startedAt', 'startedAt');
+        d.createObjectStore('settings', { keyPath: 'id' });
+      }
+      if (oldVersion < 2) d.createObjectStore('texts', { keyPath: 'id', autoIncrement: true });
     },
   });
   return dbp;
@@ -70,4 +75,26 @@ export async function saveSettings(settings: Settings): Promise<void> {
 export async function resetProgress(): Promise<void> {
   const d = await db();
   await Promise.all([d.clear('strokes'), d.clear('sessions')]);
+}
+
+// ── Mis textos ──
+
+export async function listTexts(): Promise<TextRecord[]> {
+  const all = await (await db()).getAll('texts');
+  return all.sort((a, b) => b.updatedAt - a.updatedAt);
+}
+
+export async function getText(id: number): Promise<TextRecord | undefined> {
+  return (await db()).get('texts', id);
+}
+
+/** Crea o actualiza; devuelve el id. */
+export async function saveText(text: TextRecord): Promise<number> {
+  const rec = { ...text };
+  if (rec.id === undefined) delete rec.id;
+  return (await db()).put('texts', rec);
+}
+
+export async function deleteText(id: number): Promise<void> {
+  await (await db()).delete('texts', id);
 }

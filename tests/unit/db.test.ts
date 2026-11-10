@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { getSettings, loadStats, resetProgress, saveSession, saveSettings, sessionsFor, type SessionRecord } from '@/lib/db';
+import { deleteText, getSettings, getText, listTexts, loadStats, resetProgress, saveSession, saveSettings, saveText, sessionsFor, type SessionRecord } from '@/lib/db';
 import { DEFAULT_SETTINGS } from '@/lib/settings';
 
 const metrics = { durationMs: 60000, kana: 60, kpm: 60, accuracy: 0.9, hints: 2, items: 30 };
@@ -28,5 +28,16 @@ describe('db', () => {
     expect(await getSettings()).toEqual(DEFAULT_SETTINGS);
     await saveSettings({ ...DEFAULT_SETTINGS, durationMin: 5 });
     expect((await getSettings()).durationMin).toBe(5);
+  });
+
+  it('mis textos: crear, editar, listar y borrar', async () => {
+    const id = await saveText({ title: 'a', body: 'あ', createdAt: 1, updatedAt: 1 });
+    const id2 = await saveText({ title: 'b', body: 'い', createdAt: 2, updatedAt: 2 });
+    await saveText({ id, title: 'a2', body: 'あ', createdAt: 1, updatedAt: 3 });
+    expect((await getText(id))?.title).toBe('a2');
+    expect((await listTexts()).map((t) => t.title)).toEqual(['a2', 'b']);
+    await deleteText(id);
+    await deleteText(id2);
+    expect(await listTexts()).toEqual([]);
   });
 });
