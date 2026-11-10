@@ -13,13 +13,18 @@ export default function Home() {
 
       <ul className="links">
         <li>
+          <Link href="/lecciones/">
+            レッスン <small>Lecciones con repetición ponderada</small>
+          </Link>
+        </li>
+        <li>
           <Link href="/libre/">
             自由入力 <small>Prueba libre del teclado virtual</small>
           </Link>
         </li>
       </ul>
 
-      <p className="muted">Próximamente: lecciones, sesiones con repetición ponderada y progreso.</p>
+      <p className="muted">Próximamente: palabras, modo teclado del sistema y progreso.</p>
     </>
   );
 }

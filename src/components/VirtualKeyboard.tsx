@@ -6,6 +6,8 @@ import { keyFace, type HintLevel } from '@/lib/hints';
 
 export interface VirtualKeyboardProps {
   hint: HintLevel;
+  /** Gesto que señalar (la pista tras dudar). */
+  highlight?: Stroke | null;
   onKana: (kana: string, stroke: Stroke) => void;
   /** 小゛゜: modificar la kana anterior */
   onModifier: () => void;
@@ -47,7 +49,7 @@ const REPEAT_EVERY = 70;
  * Cada dedo se sigue por separado (se puede bajar el siguiente antes de levantar el anterior);
  * la kana se escribe al levantar el dedo.
  */
-export function VirtualKeyboard({ hint, onKana, onModifier, onBackspace, onSpace, onEnter }: VirtualKeyboardProps) {
+export function VirtualKeyboard({ hint, highlight, onKana, onModifier, onBackspace, onSpace, onEnter }: VirtualKeyboardProps) {
   const root = useRef<HTMLDivElement>(null);
   const presses = useRef(new Map<number, Press>());
   const [fan, setFan] = useState<FanState | null>(null);
@@ -159,11 +161,13 @@ export function VirtualKeyboard({ hint, onKana, onModifier, onBackspace, onSpace
             {row.map((key) => {
               const face = keyFace(key, hint);
               const active = fan?.press.key === key;
+              const hinted = highlight?.key === key ? highlight : null;
+              const hintKana = hinted && key !== MOD_KEY ? flickKana(key, hinted.dir) : null;
               return (
                 <button
                   type="button"
                   key={key}
-                  className={`kb-key kb-kana${active ? ' kb-active' : ''}`}
+                  className={`kb-key kb-kana${active ? ' kb-active' : ''}${hinted ? ' kb-hint' : ''}`}
                   onPointerDown={(e) => onDown(e, key)}
                   onPointerMove={onMove}
                   onPointerUp={onUp}
@@ -175,6 +179,11 @@ export function VirtualKeyboard({ hint, onKana, onModifier, onBackspace, onSpace
                   {face.around.up && <span className="kb-around kb-u">{face.around.up}</span>}
                   {face.around.right && <span className="kb-around kb-r">{face.around.right}</span>}
                   {face.around.down && <span className="kb-around kb-d">{face.around.down}</span>}
+                  {hinted && hintKana && (
+                    <span className={`kb-hint-badge kb-hint-${hinted.dir}`} aria-hidden>
+                      {hintKana}
+                    </span>
+                  )}
                 </button>
               );
             })}
