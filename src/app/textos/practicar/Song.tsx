@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import { Clock, type TimeSource } from '@/lib/karaoke';
 import { deleteAudio, getAudio, saveAudio } from '@/lib/db';
+import { useYouTube, type YouTubeVideo } from './useYouTube';
 
 /** El audio del texto como fuente de tiempo. */
 export class AudioSource implements TimeSource {
@@ -24,7 +25,10 @@ export class AudioSource implements TimeSource {
 }
 
 export interface Song {
-  /** Nombre del fichero de audio, o null si se usa el cronómetro. */
+  /** De dónde sale la canción: vídeo de YouTube, fichero o cronómetro (suena en otra app). */
+  kind: 'youtube' | 'file' | 'clock';
+  youtube: YouTubeVideo;
+  /** Nombre del fichero de audio, o null si no hay. */
   audioName: string | null;
   /** Listo para empezar (el audio ha cargado sus metadatos). */
   ready: boolean;
@@ -34,8 +38,9 @@ export interface Song {
   removeAudio: () => Promise<void>;
 }
 
-/** Audio guardado del texto (o cronómetro si no hay). */
-export function useSong(textId: number): Song {
+/** La canción del texto: vídeo de YouTube, si no audio guardado, si no cronómetro. */
+export function useSong(textId: number, youtubeId?: string, youtubeStartMs = 0): Song {
+  const youtube = useYouTube(youtubeId);
   const [audio, setAudioEl] = useState<{ el: HTMLAudioElement; name: string; url: string } | null>(null);
   const [ready, setReady] = useState(true);
   const [version, setVersion] = useState(0);
@@ -68,10 +73,14 @@ export function useSong(textId: number): Song {
 
   useEffect(() => () => audio?.el.pause(), [audio]);
 
+  const kind = youtubeId ? 'youtube' : audio ? 'file' : 'clock';
   return {
+    kind,
+    youtube,
     audioName: audio?.name ?? null,
-    ready,
-    makeSource: () => (audio ? new AudioSource(audio.el) : new Clock()),
+    ready: kind === 'youtube' ? youtube.ready : ready,
+    makeSource: () =>
+      kind === 'youtube' ? youtube.makeSource(youtubeStartMs) : audio ? new AudioSource(audio.el) : new Clock(),
     async setAudio(file: File) {
       await saveAudio({ id: textId, name: file.name, type: file.type || 'audio/mpeg', data: await file.arrayBuffer() });
       setVersion((v) => v + 1);

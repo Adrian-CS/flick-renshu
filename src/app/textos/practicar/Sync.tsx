@@ -12,6 +12,7 @@ export function Sync({
 }: {
   lines: readonly string[];
   makeSource: () => TimeSource;
+  /** La canción suena en la app (vídeo o audio). */
   withAudio: boolean;
   onSave: (times: number[]) => void;
   onCancel: () => void;

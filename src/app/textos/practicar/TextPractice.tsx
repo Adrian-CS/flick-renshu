@@ -14,6 +14,7 @@ import { Runner } from '@/components/drill/Runner';
 import { Summary } from '@/components/drill/Summary';
 import { KeyboardChoice } from '@/components/drill/KeyboardChoice';
 import { finishRun, sessionKey, type Result, type Run } from '@/components/drill/run';
+import { parseYoutubeId, parseYoutubeStart } from '@/lib/youtube';
 import { useSong } from './Song';
 import { Sync } from './Sync';
 import { KaraokeBar, type KaraokeLog } from './KaraokeBar';
@@ -54,7 +55,9 @@ function TextPracticeFor({ text, onChange }: { text: TextRecord; onChange: (t: T
   const [running, setRunning] = useState<{ run: Run; extra?: ReactNode; log?: KaraokeLog } | null>(null);
   const [result, setResult] = useState<{ result: Result; system: boolean; extra?: string } | null>(null);
   const [copied, setCopied] = useState(false);
-  const song = useSong(text.id!);
+  const song = useSong(text.id!, text.youtubeId, text.youtubeStartMs ?? 0);
+  const [link, setLink] = useState('');
+  const [linkError, setLinkError] = useState<string | null>(null);
 
   useEffect(() => {
     getSettings().then(setSettings).catch(() => undefined);
@@ -70,6 +73,24 @@ function TextPracticeFor({ text, onChange }: { text: TextRecord; onChange: (t: T
     const next = { ...text, ...patch, updatedAt: Date.now() };
     await saveText(next);
     onChange(next);
+  }
+
+  function applyLink() {
+    const id = parseYoutubeId(link);
+    if (!id) {
+      setLinkError('No parece un enlace de YouTube.');
+      return;
+    }
+    setLinkError(null);
+    setLink('');
+    void updateText({ youtubeId: id, youtubeStartMs: parseYoutubeStart(link) ?? 0 });
+  }
+
+  /** «La canción empieza aquí»: guarda la posición del vídeo y mueve los tiempos para que sigan cuadrando. */
+  function setSongStart(ms: number) {
+    const old = text.youtubeStartMs ?? 0;
+    const next = Math.max(0, Math.round(ms));
+    void updateText({ youtubeStartMs: next, timings: text.timings ? shiftTimes(text.timings, old - next) : undefined });
   }
 
   function setKeyboard(k: Settings['keyboard']) {
@@ -125,12 +146,21 @@ function TextPracticeFor({ text, onChange }: { text: TextRecord; onChange: (t: T
     setRunning({ run, extra, log });
   }
 
+  // el reproductor se monta una vez y sigue ahí en todas las pantallas (mismo sitio del árbol)
+  const video = text.youtubeId ? (
+    <div className={`video-wrap${running ? ' video-small' : ''}`}>
+      <div className="video" ref={song.youtube.host} />
+      {song.youtube.error && <p className="note">{song.youtube.error}</p>}
+    </div>
+  ) : null;
+
   if (syncing) {
-    return (
+    return withVideo(
+      video,
       <Sync
         lines={lines}
         makeSource={song.makeSource}
-        withAudio={song.audioName !== null}
+        withAudio={song.kind !== 'clock'}
         onCancel={() => setSyncing(false)}
         onSave={(times) => {
           void updateText({ timings: times }).then(() => {
@@ -138,13 +168,14 @@ function TextPracticeFor({ text, onChange }: { text: TextRecord; onChange: (t: T
             setMode('karaoke');
           });
         }}
-      />
+      />,
     );
   }
 
   if (running) {
     const { run, log } = running;
-    return (
+    return withVideo(
+      video,
       <Runner
         run={run}
         extra={running.extra}
@@ -167,11 +198,12 @@ function TextPracticeFor({ text, onChange }: { text: TextRecord; onChange: (t: T
             setRunning(null);
           });
         }}
-      />
+      />,
     );
   }
 
-  return (
+  return withVideo(
+    video,
     <>
       <div className="row">
         <h1>{text.title}</h1>
@@ -196,7 +228,7 @@ function TextPracticeFor({ text, onChange }: { text: TextRecord; onChange: (t: T
         {effectiveMode === 'free' && (timed ? 'Sin canción: cada línea cuando termines la anterior.' : 'Para el karaoke, sincroniza antes los tiempos (abajo).')}
         {effectiveMode === 'karaoke' && 'La canción sigue sola; al final verás cuántas líneas escribiste a tiempo.'}
         {effectiveMode === 'wait' && 'La canción se para al llegar a la línea siguiente hasta que termines la actual.'}
-        {effectiveMode !== 'free' && !song.audioName && ' Sin audio: pon la canción en otra app a la vez que pulsas Empezar.'}
+        {effectiveMode !== 'free' && song.kind === 'clock' && ' Sin vídeo ni audio: pon la canción en otra app a la vez que pulsas Empezar.'}
       </p>
 
       <div className="actions">
@@ -207,9 +239,46 @@ function TextPracticeFor({ text, onChange }: { text: TextRecord; onChange: (t: T
 
       <section className="card">
         <h2 style={{ marginTop: 0 }}>Canción</h2>
+        <p className="label">Vídeo de YouTube</p>
+        {text.youtubeId ? (
+          <>
+            <p className="muted">
+              La canción empieza en {formatClock(text.youtubeStartMs ?? 0)} del vídeo. Si tiene intro, ponlo en el momento en
+              que empieza la música y pulsa «La canción empieza aquí».
+            </p>
+            <div className="actions">
+              <button type="button" className="btn" disabled={!song.youtube.ready} onClick={() => setSongStart(song.youtube.currentMs())}>
+                La canción empieza aquí
+              </button>
+              <button type="button" className="btn btn-danger" onClick={() => void updateText({ youtubeId: undefined, youtubeStartMs: undefined })}>
+                Quitar vídeo
+              </button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="actions">
+              <input
+                className="text-title"
+                value={link}
+                onChange={(e) => setLink(e.target.value)}
+                placeholder="Pega el enlace (youtube.com, youtu.be, Music…)"
+                inputMode="url"
+              />
+              <button type="button" className="btn" disabled={!link.trim()} onClick={applyLink}>
+                Usar vídeo
+              </button>
+            </div>
+            {linkError && <p className="sys-msg">{linkError}</p>}
+            <p className="muted">Necesita conexión. Si el autor no deja incrustarlo, prueba otro vídeo de la canción.</p>
+          </>
+        )}
+
+        <p className="label">O un fichero de audio</p>
         <p className="muted">
-          Audio: {song.audioName ?? 'ninguno (se usa un cronómetro)'}. Se guarda solo en este móvil y no va en la copia de
-          seguridad.
+          {song.audioName ?? 'Ninguno'}
+          {song.audioName && text.youtubeId ? ' (con vídeo se usa el vídeo)' : ''}. Se guarda solo en este móvil, funciona
+          sin conexión y no va en la copia de seguridad. Sin vídeo ni audio se usa un cronómetro.
         </p>
         <div className="actions">
           <label className="btn">
@@ -263,6 +332,15 @@ function TextPracticeFor({ text, onChange }: { text: TextRecord; onChange: (t: T
           </li>
         ))}
       </ol>
+    </>,
+  );
+}
+
+function withVideo(video: ReactNode, content: ReactNode) {
+  return (
+    <>
+      {video}
+      {content}
     </>
   );
 }

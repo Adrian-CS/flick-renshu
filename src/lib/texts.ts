@@ -12,6 +12,10 @@ export interface TextRecord {
   updatedAt: number;
   /** Inicio de cada línea en la canción (ms), si está sincronizado. */
   timings?: number[];
+  /** Vídeo de YouTube con la canción. */
+  youtubeId?: string;
+  /** Dónde empieza la canción en el vídeo (ms), p. ej. tras la intro de un videoclip. */
+  youtubeStartMs?: number;
 }
 
 /** Audio de un texto (solo en el dispositivo). */

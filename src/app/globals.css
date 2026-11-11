@@ -528,3 +528,17 @@ label.btn { cursor: pointer; }
 .sync-list li { padding: 2px 0; }
 .sync-done { color: var(--ok); }
 .sync-next { font-weight: 700; }
+
+.video-wrap { margin: 0 0 8px; }
+.video {
+  aspect-ratio: 16 / 9;
+  width: 100%;
+  max-width: calc(26vh * 16 / 9);
+  margin: 0 auto;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #000;
+}
+.video iframe { width: 100%; height: 100%; display: block; border: 0; }
+/* durante la sesión: el mínimo que pide YouTube (200 px de alto) para dejar sitio al texto */
+.video-small .video { max-width: calc(200px * 16 / 9); }
