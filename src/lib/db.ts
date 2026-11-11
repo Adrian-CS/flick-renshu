@@ -98,3 +98,61 @@ export async function saveText(text: TextRecord): Promise<number> {
 export async function deleteText(id: number): Promise<void> {
   await (await db()).delete('texts', id);
 }
+
+// ── Copia de seguridad ──
+
+export interface Backup {
+  app: 'flick-renshu';
+  version: 1;
+  exportedAt: number;
+  strokes: StrokeStat[];
+  sessions: SessionRecord[];
+  settings: Settings;
+  texts: TextRecord[];
+}
+
+export async function exportBackup(now = Date.now()): Promise<Backup> {
+  const d = await db();
+  return {
+    app: 'flick-renshu',
+    version: 1,
+    exportedAt: now,
+    strokes: await d.getAll('strokes'),
+    sessions: (await d.getAll('sessions')).map(({ id: _id, ...s }) => s),
+    settings: await getSettings(),
+    texts: (await d.getAll('texts')).map(({ id: _id, ...t }) => t),
+  };
+}
+
+/**
+ * Importa una copia. Las estadísticas por gesto se sustituyen por las de la copia (son
+ * totales); las sesiones y los textos se añaden sin duplicar los que ya existen.
+ */
+export async function importBackup(data: unknown): Promise<{ sessions: number; texts: number }> {
+  const b = data as Partial<Backup>;
+  if (b?.app !== 'flick-renshu' || b.version !== 1 || !Array.isArray(b.strokes) || !Array.isArray(b.sessions)) {
+    throw new Error('No es una copia de seguridad de フリック練習');
+  }
+  const d = await db();
+  const tx = d.transaction(['strokes', 'sessions', 'texts', 'settings'], 'readwrite');
+  for (const s of b.strokes) await tx.objectStore('strokes').put(s);
+  const seen = new Set((await tx.objectStore('sessions').getAll()).map((s) => `${s.lessonKey}|${s.startedAt}`));
+  let sessions = 0;
+  for (const { id: _id, ...s } of b.sessions) {
+    if (seen.has(`${s.lessonKey}|${s.startedAt}`)) continue;
+    seen.add(`${s.lessonKey}|${s.startedAt}`);
+    await tx.objectStore('sessions').add(s);
+    sessions++;
+  }
+  const seenTexts = new Set((await tx.objectStore('texts').getAll()).map((t) => `${t.createdAt}|${t.title}`));
+  let texts = 0;
+  for (const { id: _id, ...t } of b.texts ?? []) {
+    if (seenTexts.has(`${t.createdAt}|${t.title}`)) continue;
+    seenTexts.add(`${t.createdAt}|${t.title}`);
+    await tx.objectStore('texts').add(t);
+    texts++;
+  }
+  if (b.settings) await tx.objectStore('settings').put({ ...DEFAULT_SETTINGS, ...b.settings, id: 'settings' });
+  await tx.done;
+  return { sessions, texts };
+}

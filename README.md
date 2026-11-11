@@ -50,6 +50,8 @@ las versiones nuevas llegan a la app instalada y se aplican al volver a abrirla.
 
 1. Safari → abre la URL → Compartir → *Añadir a pantalla de inicio*.
 2. Ábrela una vez con conexión; desde entonces funciona en modo avión.
+   Las versiones nuevas se descargan al volver a abrir la app; cuando hay una, sale un aviso
+   «Hay una versión nueva» con un botón para recargar.
 3. Recomendado: Ajustes → General → Teclado → **フリックのみ** (solo deslizar, sin multitoque).
 
 ## Palabras (JMdict)
@@ -80,6 +82,13 @@ guarda la versión, la fecha del diccionario y el SHA-256 del fichero de origen.
   línea a línea. Se guardan **solo en IndexedDB del móvil**; nunca van al repositorio. Con kanji
   solo sirven con el teclado del sistema (se convierte como al escribir de verdad); en kana,
   con los dos.
+
+## Progreso y copia de seguridad
+
+進捗 muestra kana/min por sesión (teclado virtual o del sistema, por grupo de lecciones), el
+mapa de calor de fallos / pistas / tiempo por tecla y dirección, y los gestos que más cuestan.
+Desde ahí se exporta todo (estadísticas, sesiones, ajustes y Mis textos) a un `.json` y se
+vuelve a importar sin duplicar.
 
 ## Seguridad de dependencias
 

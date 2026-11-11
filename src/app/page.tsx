@@ -23,13 +23,17 @@ export default function Home() {
           </Link>
         </li>
         <li>
+          <Link href="/progreso/">
+            進捗 <small>Mapa de calor, kana/min y copia de seguridad</small>
+          </Link>
+        </li>
+        <li>
           <Link href="/libre/">
             自由入力 <small>Prueba libre del teclado virtual</small>
           </Link>
         </li>
       </ul>
 
-      <p className="muted">Próximamente: página de progreso.</p>
       <p className="muted">
         <Link href="/creditos/">Créditos y licencias</Link>
       </p>

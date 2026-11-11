@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { deleteText, getSettings, getText, listTexts, loadStats, resetProgress, saveSession, saveSettings, saveText, sessionsFor, type SessionRecord } from '@/lib/db';
+import { exportBackup, importBackup, allSessions, deleteText, getSettings, getText, listTexts, loadStats, resetProgress, saveSession, saveSettings, saveText, sessionsFor, type SessionRecord } from '@/lib/db';
 import { DEFAULT_SETTINGS } from '@/lib/settings';
 
 const metrics = { durationMs: 60000, kana: 60, kpm: 60, accuracy: 0.9, hints: 2, items: 30 };
@@ -39,5 +39,29 @@ describe('db', () => {
     await deleteText(id);
     await deleteText(id2);
     expect(await listTexts()).toEqual([]);
+  });
+
+  it('copia de seguridad: exportar, borrar e importar (dos veces sin duplicar)', async () => {
+    await saveSession(rec('row-a/mix', 1), [{ id: 'a:tap', attempts: 2, errors: 1, hints: 0, avgMs: 1000, updatedAt: 1 }]);
+    await saveText({ title: 'canción', body: 'あ', createdAt: 5, updatedAt: 5 });
+    await saveSettings({ ...DEFAULT_SETTINGS, durationMin: 3 });
+    const backup = JSON.parse(JSON.stringify(await exportBackup(99)));
+    expect(backup).toMatchObject({ app: 'flick-renshu', version: 1, exportedAt: 99 });
+
+    await resetProgress();
+    for (const t of await listTexts()) await deleteText(t.id!);
+    await saveSettings(DEFAULT_SETTINGS);
+
+    expect(await importBackup(backup)).toEqual({ sessions: 1, texts: 1 });
+    expect(await importBackup(backup)).toEqual({ sessions: 0, texts: 0 });
+    expect((await loadStats()).get('a:tap')?.attempts).toBe(2);
+    expect(await allSessions()).toHaveLength(1);
+    expect((await listTexts()).map((t) => t.title)).toEqual(['canción']);
+    expect((await getSettings()).durationMin).toBe(3);
+  });
+
+  it('importar algo que no es una copia: error', async () => {
+    await expect(importBackup({ hola: 1 })).rejects.toThrow(/copia/);
+    await expect(importBackup(null)).rejects.toThrow();
   });
 });
