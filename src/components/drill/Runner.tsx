@@ -1,5 +1,5 @@
 'use client';
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { VirtualKeyboard } from '@/components/VirtualKeyboard';
 import type { DrillSession, KanaState } from '@/lib/drill';
 import type { SystemDrill } from '@/lib/systemDrill';
@@ -9,7 +9,7 @@ import { looksLikeRomaji } from '@/lib/texts';
 import type { Run } from './run';
 
 /** Pantalla de una sesión en marcha. Llama a onFinish una sola vez. */
-export function Runner({ run, onFinish }: { run: Run; onFinish: () => void }) {
+export function Runner({ run, onFinish, extra }: { run: Run; onFinish: () => void; extra?: ReactNode }) {
   const [, rerender] = useState(0);
   const refresh = useCallback(() => rerender((n) => n + 1), []);
   const finishing = useRef(false);
@@ -48,6 +48,7 @@ export function Runner({ run, onFinish }: { run: Run; onFinish: () => void }) {
       <div className="timebar">
         <span style={{ width: `${progress * 100}%` }} />
       </div>
+      {extra}
       {run.drill.kind === 'virtual' ? (
         <VirtualPart run={run} session={run.drill.session} hint={run.drill.hint} refresh={refresh} checkEnd={checkEnd} />
       ) : (

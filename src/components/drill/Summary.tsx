@@ -1,8 +1,9 @@
+import type { ReactNode } from 'react';
 import type { Result } from './run';
 import { strokeLabel } from '@/lib/labels';
 import { compareSessions, formatDelta } from '@/lib/summary';
 
-export function Summary({ result, showHints = true }: { result: Result; showHints?: boolean }) {
+export function Summary({ result, showHints = true, extra }: { result: Result; showHints?: boolean; extra?: ReactNode }) {
   const { metrics: m, prev, weak } = result;
   const cmp = compareSessions(m, prev);
   return (
@@ -23,6 +24,7 @@ export function Summary({ result, showHints = true }: { result: Result; showHint
         )}
         <Stat label="kana" value={String(m.kana)} />
       </div>
+      {extra}
       {cmp ? <p className="muted">Comparado con la sesión anterior.</p> : <p className="muted">Primera sesión de este ejercicio.</p>}
       {weak.length > 0 && (
         <>

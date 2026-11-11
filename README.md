@@ -83,6 +83,17 @@ guarda la versión, la fecha del diccionario y el SHA-256 del fichero de origen.
   solo sirven con el teclado del sistema (se convierte como al escribir de verdad); en kana,
   con los dos.
 
+### Karaoke en Mis textos
+
+- **Tiempos de cada línea:** se pega la letra en formato LRC (`[01:23.45] …`, se detecta al
+  guardar) o se sincroniza a mano (suena la canción y se toca cuando empieza cada línea).
+  Se pueden desplazar ±0,5 s y copiar como LRC.
+- **Audio:** opcional, un fichero del móvil (mp3, m4a…), guardado solo en IndexedDB y fuera de
+  la copia de seguridad. Sin audio se usa un cronómetro y la canción suena en otra app.
+- **Modos:** *A tu ritmo* (sin canción), *Karaoke* (la canción sigue; al final, cuántas líneas
+  se escribieron a tiempo) y *La canción te espera* (se pausa al llegar a la línea siguiente
+  hasta terminar la actual).
+
 ## Progreso y copia de seguridad
 
 進捗 muestra kana/min por sesión (teclado virtual o del sistema, por grupo de lecciones), el

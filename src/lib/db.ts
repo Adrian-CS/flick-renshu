@@ -3,7 +3,7 @@ import { openDB, type DBSchema, type IDBPDatabase } from 'idb';
 import { mergeStat, type StrokeStat } from './stats';
 import { DEFAULT_SETTINGS, type Settings } from './settings';
 import type { DrillMetrics } from './drill';
-import type { TextRecord } from './texts';
+import type { TextAudio, TextRecord } from './texts';
 
 export interface SessionRecord extends DrillMetrics {
   id?: number;
@@ -17,13 +17,14 @@ interface FlickDB extends DBSchema {
   sessions: { key: number; value: SessionRecord; indexes: { lessonKey: string; startedAt: number } };
   settings: { key: string; value: Settings & { id: string } };
   texts: { key: number; value: TextRecord };
+  audio: { key: number; value: TextAudio };
 }
 
 const DB_NAME = 'flick-renshu';
 let dbp: Promise<IDBPDatabase<FlickDB>> | null = null;
 
 export function db(): Promise<IDBPDatabase<FlickDB>> {
-  dbp ??= openDB<FlickDB>(DB_NAME, 2, {
+  dbp ??= openDB<FlickDB>(DB_NAME, 3, {
     upgrade(d, oldVersion) {
       if (oldVersion < 1) {
         d.createObjectStore('strokes', { keyPath: 'id' });
@@ -33,6 +34,7 @@ export function db(): Promise<IDBPDatabase<FlickDB>> {
         d.createObjectStore('settings', { keyPath: 'id' });
       }
       if (oldVersion < 2) d.createObjectStore('texts', { keyPath: 'id', autoIncrement: true });
+      if (oldVersion < 3) d.createObjectStore('audio', { keyPath: 'id' });
     },
   });
   return dbp;
@@ -96,11 +98,25 @@ export async function saveText(text: TextRecord): Promise<number> {
 }
 
 export async function deleteText(id: number): Promise<void> {
-  await (await db()).delete('texts', id);
+  const d = await db();
+  await Promise.all([d.delete('texts', id), d.delete('audio', id)]);
+}
+
+export async function getAudio(textId: number): Promise<TextAudio | undefined> {
+  return (await db()).get('audio', textId);
+}
+
+export async function saveAudio(audio: TextAudio): Promise<void> {
+  await (await db()).put('audio', audio);
+}
+
+export async function deleteAudio(textId: number): Promise<void> {
+  await (await db()).delete('audio', textId);
 }
 
 // ── Copia de seguridad ──
 
+/** El audio no va en la copia (puede ocupar mucho): solo textos y tiempos. */
 export interface Backup {
   app: 'flick-renshu';
   version: 1;

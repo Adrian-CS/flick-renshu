@@ -10,6 +10,17 @@ export interface TextRecord {
   body: string;
   createdAt: number;
   updatedAt: number;
+  /** Inicio de cada línea en la canción (ms), si está sincronizado. */
+  timings?: number[];
+}
+
+/** Audio de un texto (solo en el dispositivo). */
+export interface TextAudio {
+  /** id del texto */
+  id: number;
+  name: string;
+  type: string;
+  data: ArrayBuffer;
 }
 
 /** Líneas no vacías, sin espacios a los lados. */

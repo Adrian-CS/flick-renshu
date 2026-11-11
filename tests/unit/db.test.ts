@@ -1,6 +1,6 @@
 import 'fake-indexeddb/auto';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { exportBackup, importBackup, allSessions, deleteText, getSettings, getText, listTexts, loadStats, resetProgress, saveSession, saveSettings, saveText, sessionsFor, type SessionRecord } from '@/lib/db';
+import { getAudio, saveAudio, deleteAudio, exportBackup, importBackup, allSessions, deleteText, getSettings, getText, listTexts, loadStats, resetProgress, saveSession, saveSettings, saveText, sessionsFor, type SessionRecord } from '@/lib/db';
 import { DEFAULT_SETTINGS } from '@/lib/settings';
 
 const metrics = { durationMs: 60000, kana: 60, kpm: 60, accuracy: 0.9, hints: 2, items: 30 };
@@ -63,5 +63,19 @@ describe('db', () => {
   it('importar algo que no es una copia: error', async () => {
     await expect(importBackup({ hola: 1 })).rejects.toThrow(/copia/);
     await expect(importBackup(null)).rejects.toThrow();
+  });
+
+  it('audio de un texto: guardar, leer y se borra con el texto', async () => {
+    const id = await saveText({ title: 'c', body: 'あ', createdAt: 9, updatedAt: 9, timings: [0] });
+    await saveAudio({ id, name: 'c.m4a', type: 'audio/mp4', data: new Uint8Array([1, 2, 3]).buffer });
+    const a = await getAudio(id);
+    expect(a?.name).toBe('c.m4a');
+    expect([...new Uint8Array(a!.data)]).toEqual([1, 2, 3]);
+    expect((await getText(id))?.timings).toEqual([0]);
+    await deleteText(id);
+    expect(await getAudio(id)).toBeUndefined();
+    await saveAudio({ id: 777, name: 'x', type: 'audio/mpeg', data: new ArrayBuffer(1) });
+    await deleteAudio(777);
+    expect(await getAudio(777)).toBeUndefined();
   });
 });

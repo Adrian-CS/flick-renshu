@@ -500,3 +500,31 @@ label.btn { cursor: pointer; }
   max-width: 536px;
   margin: 0 auto;
 }
+
+/* ── karaoke ─────────────────────────────────────── */
+
+.karaoke-bar { margin: 6px 0 0; }
+.karaoke-time { font-variant-numeric: tabular-nums; font-weight: 600; }
+.karaoke-status { margin: 2px 0; font-size: 0.9rem; color: var(--muted); min-height: 1.4em; }
+.karaoke-status.behind { color: var(--warn); }
+.karaoke-sung { margin: 0; font-size: 0.9rem; color: var(--accent); }
+.karaoke-result { font-weight: 600; }
+
+.sync-clock { font-size: 1.4rem; font-variant-numeric: tabular-nums; margin: 10px 0; }
+.sync-mark {
+  display: block;
+  width: 100%;
+  min-height: 7rem;
+  padding: 16px;
+  border: none;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: var(--accent-ink);
+  font: inherit;
+  font-size: 1.4rem;
+  touch-action: manipulation;
+}
+.sync-mark small { display: block; font-size: 0.85rem; opacity: 0.85; margin-bottom: 4px; }
+.sync-list li { padding: 2px 0; }
+.sync-done { color: var(--ok); }
+.sync-next { font-weight: 700; }
